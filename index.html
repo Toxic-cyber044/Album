@@ -1,0 +1,2346 @@
+<!--
+Quick Start:
+1. Create a folder named "portfolio".
+2. Open "portfolio" in VS Code.
+3. Create `index.html` and paste this template.
+4. Inside the "portfolio" folder, create a subfolder named `images` and copy your photo files there.
+5. Populate the `imageData` array in the script with your images (file names must match exactly).
+6. (Optional) Install the "Live Server" extension for real-time preview.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Photography Showcase</title>
+  <style>
+    /* Reset & Base */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI', Tahoma, Verdana, sans-serif; background:#FFF4E6; color:#4A2C2A; }
+
+    header { text-align:center; padding:40px 20px; }
+    header h1 { font-size:3rem; }
+    header p { font-size:1.2rem; color:#7A4F3A; }
+
+    /* Landing */
+    #landing { display:flex; justify-content:center; gap:40px; padding:80px 20px; flex-wrap:wrap; }
+    .card { background:#FFEDD5; width:220px; height:220px; border-radius:16px;
+            box-shadow:0 4px 8px rgba(0,0,0,0.1);
+            display:flex; flex-direction:column; justify-content:center; align-items:center;
+            cursor:pointer; transition: transform 0.4s ease, box-shadow 0.4s ease; }
+    .card:hover { transform:translateY(-8px); box-shadow:0 8px 16px rgba(0,0,0,0.2); }
+    .card h2 { font-size:1.5rem; }
+    .card p  { color:#7A4F3A; }
+
+    /* Sections */
+    .gallery-section { display:none; padding:20px; }
+    .gallery-section.active { display:block; }
+    .back-btn { margin-bottom:20px; background:none; border:none; color:#7A4F3A;
+                font-size:1rem; cursor:pointer; }
+    .back-btn:hover { color:#4A2C2A; }
+    .section-title { text-align:center; font-size:2rem; margin-bottom:20px; }
+
+    /* Thumbnails grid */
+    .thumbnails { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+                  gap:15px; }
+    .thumbnail { text-align:center; cursor:pointer; }
+    .thumbnail img { 
+      width:100%; 
+      border-radius:8px; 
+      transition: transform 0.4s ease, filter 0.4s ease;
+    }
+    .thumbnail img:hover { 
+      transform: scale(1.05); 
+      filter: brightness(1.05); 
+    }
+    .thumbnail-name { margin-top:8px; font-size:0.9rem; color:#7A4F3A; }
+
+    /* Viewer overlay */
+    .viewer-overlay {
+      display: none;
+      position: fixed;
+      top:0; left:0; width:100vw; height:100vh;
+      background: rgba(0,0,0,0.7);
+      justify-content:center;
+      align-items:center;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 999;
+    }
+    .viewer-overlay.active { display: flex; opacity: 1; }
+    .viewer-content { background:#FFE8CC; padding:20px; border-radius:8px;
+                      display:flex; gap:20px; max-width:90%; max-height:90%; overflow:auto; }
+    .viewer-content img { max-width:60vw; max-height:80vh; border-radius:8px; }
+    .viewer-details { color:#4A2C2A; display:flex; flex-direction:column; justify-content:flex-start; }
+    .viewer-details h3 { margin-bottom:10px; }
+    .viewer-details p { margin:4px 0; }
+    .viewer-details .label { font-family: 'Georgia', serif; font-weight: bold; font-style: italic; }
+    .viewer-details .value { font-family: 'Segoe UI', Tahoma, Verdana, sans-serif; }
+    .close-btn { align-self:flex-end; background:none; border:none; font-size:1.5rem;
+                 cursor:pointer; color:#4A2C2A; }
+    .close-btn:hover { color:#7A4F3A; }
+
+    /* Navigation arrows */
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 2.5rem;
+      color: #fff;
+      background: rgba(0,0,0,0.4);
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 50%;
+      transition: background 0.3s ease;
+      z-index: 1000;
+    }
+    .nav-arrow:hover { background: rgba(0,0,0,0.6); }
+    .nav-arrow.left { left: 20px; }
+    .nav-arrow.right { right: 20px; }
+    .nav-arrow.hidden { display: none; }
+
+    footer { text-align:center; padding:40px 20px; font-size:0.9rem; color:#7A4F3A; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Photography Showcase</h1>
+    <p>Click a category to explore.</p>
+  </header>
+
+   <div id="landing">
+    <div class="card" data-target="landscapes">
+      <h2>Landscapes</h2><p>Nature & Architecture</p>
+    </div>
+    <div class="card" data-target="portraits">
+      <h2>Portraits</h2><p>Faces & Emotions</p>
+    </div>
+  </div>
+
+  <!-- Landscapes Section -->
+  <section id="landscapes" class="gallery-section">
+    <button class="back-btn">← Back to Categories</button>
+    <h2 class="section-title">Landscapes & Buildings</h2>
+    <div class="thumbnails"></div>
+  </section>
+
+  <!-- Portraits Section -->
+  <section id="portraits" class="gallery-section">
+    <button class="back-btn">← Back to Categories</button>
+    <h2 class="section-title">Portraits</h2>
+    <div class="thumbnails"></div>
+  </section>
+
+  <!-- Viewer Overlay -->
+  <div class="viewer-overlay" id="viewerOverlay">
+    <button class="nav-arrow left" id="prevPhoto">❮</button>
+    <div class="viewer-content">
+      <button class="close-btn" id="closeViewer">×</button>
+      <img src="" alt="" id="viewerImg">
+      <div class="viewer-details">
+        <p><span class="label">Location:</span> <span class="value" id="viewerLocation"></span></p>
+        <p><span class="label">Camera:</span> <span class="value" id="viewerCamera"></span></p>
+      </div>
+    </div>
+    <button class="nav-arrow right" id="nextPhoto">❯</button>
+  </div>
+
+  <script>
+    const imageData = [
+    {
+        section: "landscapes",
+        location: "Milan, Italy",
+        src: "images/IMG_0037.JPG",
+        alt: "Interior of Milan Central Station with its majestic arched glass roof and bustling platforms",
+        title: "Milan Central Station",
+        desc: "The grand interior of Italy's busiest train station, showcasing its iconic steel and glass architecture.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0303.JPG",
+        alt: "Facade of a Gothic cathedral with intricate stone spires against a blue sky",
+        title: "St. Patrick's Cathedral",
+        desc: "The iconic cathedral at the heart of New York City under a clear blue sky.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan Skyscraper, New York",
+        src: "images/IMG_0304.JPG",
+        alt: "Tall glass-clad skyscraper reflecting the sky and surrounding buildings",
+        title: "Midtown Glass Tower",
+        desc: "A modern skyscraper reflecting the city skyline in its glass facade.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0305.JPG",
+        alt: "Close-up of stacked Louis Vuitton trunks with monogram pattern against sky",
+        title: "Fifth Avenue Installation",
+        desc: "An artistic display of luxury trunks showcased on Fifth Avenue.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0306.JPG",
+        alt: "Street-level view of skyscrapers with American flag in foreground",
+        title: "Fifth Avenue Skyline",
+        desc: "American flags waving in front of towering buildings on Fifth Avenue.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0238.JPG",
+        alt: "Sunset light reflecting on a mirrored office building facade",
+        title: "Downtown Reflection",
+        desc: "Golden hour reflections dancing on mirrored skyscrapers downtown.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0297.JPG",
+        alt: "Front entrance of the New York Public Library with lion statues",
+        title: "NY Public Library",
+        desc: "The grand entrance of the historic public library guarded by iconic lions.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0299.JPG",
+        alt: "American flags waving above an urban street scene with skyscrapers",
+        title: "Fifth Avenue Flags",
+        desc: "A row of flags fluttering above the bustling street of Fifth Avenue.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0301.JPG",
+        alt: "Cluster of tall office towers shot from street level",
+        title: "Financial District Towers",
+        desc: "A view upwards at the towering financial district skyscrapers.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+        section: "landscapes",
+        location: "Manhattan, New York",
+        src: "images/IMG_0302.JPG",
+        alt: "Side view of a Gothic cathedral with pointed spire and blue sky backdrop",
+        title: "St. Patrick's Cathedral Side",
+        desc: "A side perspective of the cathedral showcasing its pointed spire.",
+        camera: "shot by iPhone 15 Pro"
+      },
+      {
+    section: "landscapes",
+    location: "Manhattan, New York",
+    src: "images/IMG_0314.JPG",
+    alt: "Sunlit high-rise residential buildings with reflective glass windows",
+    title: "High-Rise Apartments",
+    desc: "Sunlight casting warm tones on modern residential towers.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3110.JPG",
+    alt: "Illuminated historic building facade with a Pret a Manger at street level at night",
+    title: "Nighttime Café",
+    desc: "Cozy nighttime glow from a street café against a dark urban backdrop.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3245.JPG",
+    alt: "Long exposure light trails passing Big Ben at night",
+    title: "Big Ben Light Trails",
+    desc: "Dynamic light trails capturing the energy of London by night.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3246.JPG",
+    alt: "Clear night sky framing the illuminated clock tower of Big Ben",
+    title: "Big Ben at Night",
+    desc: "The iconic clock tower standing out under a starry night sky.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "Manhattan, New York",
+    src: "images/IMG_0307.JPG",
+    alt: "Fall foliage framing skyscrapers in Central Park",
+    title: "Central Park Foliage",
+    desc: "Autumn leaves creating contrast against the urban skyline.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "Manhattan, New York",
+    src: "images/IMG_0309.JPG",
+    alt: "Two dark glass skyscrapers reflecting the evening sky",
+    title: "Columbus Circle Towers",
+    desc: "Silhouetted office towers against a dusky sky.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "Manhattan, New York",
+    src: "images/IMG_0310.JPG",
+    alt: "Tall reflective building with blue sky backdrop",
+    title: "West Side Skyscraper",
+    desc: "A sleek modern tower mirrored against the clear sky.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "Manhattan, New York",
+    src: "images/IMG_0311.JPG",
+    alt: "Modern glass-fronted building reflecting nearby structures",
+    title: "Urban Glass Facade",
+    desc: "Geometric reflections creating an abstract cityscape.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "Manhattan, New York",
+    src: "images/IMG_0312.JPG",
+    alt: "Heightened view of twin towers rising above city blocks",
+    title: "West Side Towers",
+    desc: "Twin high-rises dominating the western skyline.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "Manhattan, New York",
+    src: "images/IMG_0313.JPG",
+    alt: "Narrow street flanked by towering buildings casting shadows",
+    title: "City Street Canyon",
+    desc: "Urban canyon effect created by closely packed skyscrapers.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3267.JPG",
+    alt: "Plate of cheese fries and burger with city lights in window reflection",
+    title: "Late Night Snack",
+    desc: "A tray of loaded cheese fries and a juicy burger against a bustling street backdrop.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3271.JPG",
+    alt: "Curved glass building lit by purple and blue neon lights with crowd below",
+    title: "Neon City Glow",
+    desc: "A modern facade illuminated by vibrant neon strips, drawing the evening crowd.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3273.JPG",
+    alt: "Dimly lit gallery corridor with sculptural hanging installations under skylights",
+    title: "Sculpture Passage",
+    desc: "An elegant indoor installation of spiraling metal forms under vaulted glass ceilings.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3251.JPG",
+    alt: "Mosaic map and blurred commuters entering an underground station",
+    title: "Subway Mosaic",
+    desc: "A long-exposure capture of bustling commuters passing colorful station tiles.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3257.JPG",
+    alt: "Historic brick building illuminated at night with 'Moulin Rouge' signage",
+    title: "Moulin Rouge Sign",
+    desc: "Iconic red neon 'Moulin Rouge!' sign above a busy street at night",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3258.JPG",
+    alt: "Iconic red neon 'Moulin Rouge!' sign above a busy street at night",
+    title: "Gallery Marquee",
+    desc: "Gallery entrance with a lamp on a dark street, creating a warm glow.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3261.JPG",
+    alt: "Opulent stone corner building at night with 'Burberry' logo over ground-floor windows",
+    title: "Burberry Facade",
+    desc: "Bus moving past with low exposure, capturing the essence of London nightlife.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3265.JPG",
+    alt: "Curved LED billboard above a busy London street with passing light trails",
+    title: "Piccadilly Lights",
+    desc: "Vibrant digital advertisements creating dynamic light trails over a city roundabout.",
+    camera: "shot by iPhone 15 Pro"
+  },
+
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3460.JPG",
+    alt: "London Underground sign on a plant-covered building facade",
+    title: "Covent Garden Underground",
+    desc: "Entrance to the Covent Garden station framed by greenery-covered architecture.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3461.JPG",
+    alt: "Classic black London telephone booth on a city street",
+    title: "Telephone Booth",
+    desc: "A vintage telephone booth stands alone against an urban backdrop.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3464.JPG",
+    alt: "Corner view of a historic brick building under a moody sky",
+    title: "Historic Corner",
+    desc: "The architectural details of a corner building set against dramatic skies.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3466.JPG",
+    alt: "A row of Victorian-style houses with ornate windows",
+    title: "Row Houses",
+    desc: "Terraced houses showcasing classic London residential architecture.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3468.JPG",
+    alt: "Colorful shopfronts of a pub and a storefront in London",
+    title: "Shopfront Duo",
+    desc: "An eclectic mix of pub and shop façades reflecting street culture.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3492.JPG",
+    alt: "People at a canal-side market under umbrellas",
+    title: "Camden Market",
+    desc: "Crowds gather by the Grand Union Canal at Camden Market stalls.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3275.JPG",
+    alt: "Interior of a train station hall with iron arches and platforms",
+    title: "Station Hall",
+    desc: "The expansive hall of a train station with symmetrical iron arches and waiting passengers.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3499.JPG",
+    alt: "Angular metal facade of a modern building at dusk",
+    title: "Modern Facade",
+    desc: "A contemporary structure with vertical metal slats against a teal sky.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3500.JPG",
+    alt: "Metal sky bridge connecting two sections of a building",
+    title: "Sky Bridge",
+    desc: "An elevated walkway linking two architectural volumes under evening light.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3502.JPG",
+    alt: "Modern apartment building with protruding balconies",
+    title: "Residential Balconies",
+    desc: "Geometric balconies punctuating a brick apartment façade.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3505.JPG",
+    alt: "Single airplane contrail streak across a dark cloudy sky",
+    title: "Contrail Overhead",
+    desc: "Airplane flying high, leaving a streak against a moody sky.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3507.JPG",
+    alt: "Canal with moored boats and illuminated buildings at sunset",
+    title: "Canal View",
+    desc: "Reflections on the water as evening lights come on along the canal.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3508.JPG",
+    alt: "Busy street scene at dusk with blurred pedestrians and market stalls",
+    title: "Camden High Street",
+    desc: "Vibrant foot traffic and neon signs as day turns to night.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3510.JPG",
+    alt: "Brick building with curved façade housing Oddballs store",
+    title: "Oddballs Shopfront",
+    desc: "A corner storefront with large display windows and warm interior glow.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3506.JPG",
+    alt: "Historic pub building illuminated in red night lighting",
+    title: "Waxy's Little Sister",
+    desc: "An ornate pub corner drenched in dramatic colored lights.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3494.JPG",
+    alt: "Rounded brick building with pink uplighting by the canal",
+    title: "Canal Quarter",
+    desc: "Historic brick structure bathed in colored light near the water's edge.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_4053.JPG",
+    alt: "Black telephone booth illuminated by circular neon lights inside",
+    title: "Neon Booth",
+    desc: "Three classic booths stand silent as neon rings glow within one of them.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_4054.JPG",
+    alt: "Upshot of building corner showcasing decorative golden balcony elements",
+    title: "Golden Balconies",
+    desc: "Artful golden reliefs highlight a modern façade under stormy skies.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "Campania, Italy",
+    src: "images/IMG_5173.JPG",
+    alt: "Sunlit waterfall cascading through dark forest foliage",
+    title: "Hidden Falls",
+    desc: "A secret waterfall energizes the woods with mist and motion.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3949.JPG",
+    alt: "Stonehenge silhouette against an ominous teal sky",
+    title: "Stonehenge Storm",
+    desc: "The ancient stones loom under dramatic clouds in saturated tones.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3951.JPG",
+    alt: "Classic daytime shot of Stonehenge with lush green grass",
+    title: "Stonehenge Daylight",
+    desc: "The monument stands serene under a cloudy sky in broad daylight.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_3952.JPG",
+    alt: "Close-up view of Stonehenge stones showing texture and lichen",
+    title: "Stonehenge Details",
+    desc: "Weathered surfaces reveal centuries of moss and geological history.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_4050.JPG",
+    alt: "Grey squirrel perched on a tree branch among green leaves",
+    title: "Urban Squirrel",
+    desc: "A curious squirrel pauses mid-branch in a city park canopy.",
+    camera: "shot by iPhone 15 Pro"
+  },
+  {
+    section: "landscapes",
+    location: "London, UK",
+    src: "images/IMG_4051.JPG",
+    alt: "Silhouette of leafless tree branches against a dusky sky",
+    title: "Twilight Silhouettes",
+    desc: "Bare branches trace intricate patterns in the fading light.",
+    camera: "shot by iPhone 15 Pro"
+  },
+    {
+      section: "landscapes",
+      location: "Amsterdam, Netherlands",
+      src: "images/IMG_5436.JPG",
+      alt: "Large mural of a couple kissing painted on the side of a canal-side building",
+      title: "Street Mural",
+      desc: "A vivid red-and-white mural captures an intimate moment in the urban landscape.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Amsterdam, Netherlands",
+      src: "images/IMG_5437.JPG",
+      alt: "Brick brewery building with Heineken sign and crowds below under a yellow sky",
+      title: "Heineken Brewery",
+      desc: "The historic Heineken facade towers over busy city traffic.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_5783.JPG",
+      alt: "Close-up of a branded Red Bull car roof box and rain-dappled window",
+      title: "Red Bull Promo",
+      desc: "A promotional vehicle glistens with raindrops in the golden hour.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_5784.JPG",
+      alt: "Rear view focus on Red Bull logo and city mural backdrop",
+      title: "Red Bull Rear",
+      desc: "The can-shaped roof box frames an urban mural scene.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Positano, Italy",
+      src: "images/IMG_6403.JPG",
+      alt: "Coastal cliffside town illuminated at night with pool in foreground",
+      title: "Positano Lights",
+      desc: "The Amalfi Coast village glows under a starry sky.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Amsterdam, Netherlands",
+      src: "images/IMG_5428.JPG",
+      alt: "Bright daytime view of the opera house facade against moving clouds",
+      title: "Opera Daylight",
+      desc: "Sunlit architecture contrasts with blurred sky streaks.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Amsterdam, Netherlands",
+      src: "images/IMG_5431.JPG",
+      alt: "Macro of red and white tulips in low light",
+      title: "Tulip Macro",
+      desc: "Rich petals emerge from deep shadow in vivid color.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Amsterdam, Netherlands",
+      src: "images/IMG_5432.JPG",
+      alt: "Futuristic building jutting out over water under cloudy sky",
+      title: "Film Museum",
+      desc: "A modern landmark mirrors the moody sky above the city canal.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Amsterdam, Netherlands",
+      src: "images/IMG_5435.JPG",
+      alt: "Historic stone building with geometric facade caught in sun glare",
+      title: "Station Facade",
+      desc: "The grand station exterior gleams against a sepia sky.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Calabria, Italy",
+      src: "images/IMG_7406.JPG",
+      alt: "Dense star field with bright milky way core",
+      title: "Milky Way Core",
+      desc: "The heart of our galaxy shimmers with countless stars.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Calabria, Italy",
+      src: "images/IMG_7407.JPG",
+      alt: "Starry sky with warm gold tones and silhouetted branches",
+      title: "Golden Night Sky",
+      desc: "A canopy of stars punctuates the night in golden hues.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Calabria, Italy",
+      src: "images/IMG_7409.JPG",
+      alt: "Terrace railing overlooking a coastal cliff village at dusk",
+      title: "Terrace View",
+      desc: "A quiet terrace offers a panoramic view of the lit town.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_6454.JPG",
+      alt: "Bright daytime view of a cliffside town and blue sea",
+      title: "Virgiliano Park Day",
+      desc: "Sunlit blossoms frame the azure Mediterranean horizon.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_9953.JPG",
+      alt: "Isolated house perched on a rocky cliff edge",
+      title: "Cliffside Dwelling",
+      desc: "A lone building clings to the edge above the sea, evoking solitude and resilience.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_9954.JPG",
+      alt: "Wider view of cliffside house with arches below",
+      title: "Ocean Arches",
+      desc: "Natural arches carve through coastal stone beneath a solitary home.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_9955.JPG",
+      alt: "Ocean horizon with boat and cliffs under dramatic sky",
+      title: "Seaside Layers",
+      desc: "Sea, sky, and stone blend in layers with a ferry approaching from afar.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Italy",
+      src: "images/IMG_9998.JPG",
+      alt: "Dense collection of stars in a dark sky",
+      title: "Celestial Veil",
+      desc: "An ethereal stretch of stars fades into infinite space.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_9826.JPG",
+      alt: "Elevated night view of Naples with glowing street lights",
+      title: "Naples at Night",
+      desc: "A shimmering network of roads and buildings illuminates the cityscape.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_9225.JPG",
+      alt: "Heineken bottle with rose in dimly lit bar",
+      title: "Nightcap & Bloom",
+      desc: "A rose in a beer bottle captures a fleeting moment of nightlife romance.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Naples, Italy",
+      src: "images/IMG_9575.JPG",
+      alt: "Small golden crescent moon in dark sky",
+      title: "Lunar Slice",
+      desc: "The delicate arc of a crescent moon rests in the silence of night.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Campania, Italy",
+      src: "images/IMG_9014.JPG",
+      alt: "Lit candle centerpiece on dark reflective table",
+      title: "Table Glow",
+      desc: "Candlelight dances on glass during an intimate dinner setting.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Campania, Italy",
+      src: "images/IMG_9124.JPG",
+      alt: "Stylized superhero sculpture emerging from wall",
+      title: "Wall of Power",
+      desc: "A bold, fragmented sculpture punches outward from stone.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+      section: "landscapes",
+      location: "Campania, Italy",
+      src: "images/IMG_9137.JPG",
+      alt: "Close-up of Graticciaia wine bottle with moody lighting",
+      title: "Italian Red",
+      desc: "The richness of Italian wine meets the warmth of ambient light.",
+      camera: "shot by iPhone 15 Pro"
+    },
+    {
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_7694.JPG",
+  alt: "Rock cliff with narrow road and streetlight on top edge",
+  title: "Edge of Gravity",
+  desc: "A winding road clings to the cliffside under a moody sky.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_7703.JPG",
+  alt: "Densely clustered starfield with golden hue",
+  title: "Core Nebula",
+  desc: "A vibrant stellar concentration glows through the void.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_8282.JPG",
+  alt: "Italo train at station under linear ceiling lights",
+  title: "Tracks of Time",
+  desc: "Evening light strikes a modern train ready for departure.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Campania, Italy",
+  src: "images/IMG_8678.JPG",
+  alt: "Vintage Fiat 850 under stone arch in sunlight",
+  title: "Under the Arch",
+  desc: "An old car hides in the shade of a rustic archway.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_8649.JPG",
+  alt: "Sunset-lit alleyway with Vesuvius in background",
+  title: "Through the Alley",
+  desc: "A golden view of Naples framed by city shadows and festive lights.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3505 (2).JPG",
+  alt: "Curving seaside road with buildings and boats",
+  title: "Naples Curve",
+  desc: "The coastline winds tightly between city blocks and the blue expanse.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STMm"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3974 (1).JPG",
+  alt: "Rustic trattoria with lights and people dining",
+  title: "Hostaria Vibe",
+  desc: "Warm lights and laughter echo from a cozy Roman corner.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3973 (1).JPG",
+  alt: "Traffic and city lights in Rome at dusk",
+  title: "City Flow",
+  desc: "Headlights and cobblestones define the pulse of Roman evenings.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3981 (1).JPG",
+  alt: "Narrow alley with glowing restaurants and buildings",
+  title: "Twilight Facades",
+  desc: "Historic walls bathe in sunset glow in a quiet Roman alley.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3975 (1).JPG",
+  alt: "Close-up of baroque dome and bell tower",
+  title: "Sacred Geometry",
+  desc: "Symmetry and stone merge in this classic Roman church dome.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3977 (1).JPG",
+  alt: "Statue of Neptune battling sea creatures",
+  title: "Neptune’s Fountain",
+  desc: "Stone gods clash above water in Rome’s famed fountain.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3979 (1).JPG",
+  alt: "Detailed shot of church dome and towers at dusk",
+  title: "Baroque Majesty",
+  desc: "Domes rise into twilight, adorned with saints and shadows.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3980 (1).JPG",
+  alt: "Church and fountain view during sunset",
+  title: "Golden Hour Piazza",
+  desc: "Evening glow wraps Piazza Navona in historic elegance.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3982 (1).JPG",
+  alt: "Close-up brick detail of Pantheon exterior",
+  title: "Ancient Angles",
+  desc: "Warm shadows trace the timeless bricks of the Pantheon.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+    section: "landscapes",
+    location: "Naples, Italy",
+    src: "images/IMG_3481 (1).JPG",
+    alt: "Detailed illustration of a mythological figure with surreal features",
+    title: "Ink Demon",
+    desc: "An intricate hand-drawn artwork showcasing a powerful, monstrous figure.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+    section: "landscapes",
+    location: "Naples, Italy",
+    src: "images/IMG_3500 (2).JPG",
+    alt: "Ferry crossing the Gulf of Naples with distant mountains and clouds",
+    title: "Across the Gulf",
+    desc: "A lone ferry sails through the deep blue waters under looming skies.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+    section: "landscapes",
+    location: "Paris, France",
+    src: "images/IMG_2840 (1).JPG",
+    alt: "Eiffel Tower seen from below framed by winter trees",
+    title: "Iron Lady at Dusk",
+    desc: "An iconic view of the Eiffel Tower from a poetic perspective.",
+    camera: "shot by iPhone 15"
+  },
+  {
+    section: "landscapes",
+    location: "Paris, France",
+    src: "images/IMG_2853 (1).JPG",
+    alt: "Facade of a building with heavy graffiti and murals",
+    title: "Urban Canvas",
+    desc: "Street art and graffiti redefine the look of this Parisian building.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+    section: "landscapes",
+    location: "Frankfurt, Germany",
+    src: "images/IMG_3091 (1).JPG",
+    alt: "Skyscrapers reflecting sunset in Frankfurt's financial district",
+    title: "Golden Towers",
+    desc: "Frankfurt's skyline glows in the golden light of sunset.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+    section: "landscapes",
+    location: "Frankfurt, Germany",
+    src: "images/IMG_3106 (1).JPG",
+    alt: "Skyscraper and plane trail in early evening sky",
+    title: "Departure",
+    desc: "A jet streaks across the sky near a towering glass building.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+    section: "landscapes",
+    location: "Frankfurt, Germany",
+    src: "images/IMG_3152 (1).JPG",
+    alt: "Interior view of Frankfurt Hauptbahnhof with signs and iron roof",
+    title: "Transit Web",
+    desc: "The complex architecture of one of Germany's busiest train stations.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+    section: "landscapes",
+    location: "Naples, Italy",
+    src: "images/IMG_3365 (1).JPG",
+    alt: "Rock in the sea under a vibrant sunset sky",
+    title: "Lone Stone",
+    desc: "A solitary rock surrounded by calm waters at sunset.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+    section: "portraits",
+    location: "Napoli Comicon",
+    src: "images/IMG_3480 (1).JPG",
+    alt: "Cosplayer wearing manga print outfit holding matching flag",
+    title: "Manga Spirit",
+    desc: "A joyful moment at Comicon celebrating anime and cosplay culture.",
+    camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+  },
+  {
+  section: "portraits",
+  location: "Naples University",
+  src: "images/IMG_4714 (1).JPG",
+  alt: "Panoramic cityscape under cloudy sky",
+  title: "Degree's Day",
+  desc: "A sweeping view of the city unfolds beneath dramatic clouds.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3996 (1).JPG",
+  alt: "Historic building with ornate details",
+  title: "Trevi Fountain Facade",
+  desc: "Architectural details stand out on a classic city building.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4047 (1).JPG",
+  alt: "Sunset over distant hills",
+  title: "Sunset Hills",
+  desc: "Soft light bathes rolling hills as the sun sets.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_4693 (1).JPG",
+  alt: "Mountain landscape with cloudy sky",
+  title: "Mountain Veil",
+  desc: "Clouds drift over rugged mountain peaks.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "London, UK",
+  src: "images/IMG_4702 (1).JPG",
+  alt: "River winding through green valley",
+  title: "River Valley",
+  desc: "A gentle river carves its way through lush greenery.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0234 (1).JPG",
+  alt: "Facade of a modern building with sunset reflections",
+  title: "Sunset Facade",
+  desc: "Warm light reflects off the glass of a city building as evening approaches.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0235 (1).JPG",
+  alt: "Modern building with glass windows",
+  title: "Glass Reflections",
+  desc: "A contemporary facade captures the sky and city in its mirrored windows.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0315 (1).JPG",
+  alt: "Person walking in urban setting",
+  title: "Time Square",
+  desc: "A solitary figure walks through the city, blending into the urban landscape.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0316 (1).JPG",
+  alt: "Group of friends smiling outdoors",
+  title: "New York Street",
+  desc: "A group of friends share a joyful moment in the open air.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0317 (1).JPG",
+  alt: "Person posing for a photo",
+  title: "Portrait Pose",
+  desc: "A confident pose captures the personality of the subject.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0318 (1).JPG",
+  alt: "Smiling person in sunlight",
+  title: "Sunlit Smile",
+  desc: "A bright smile shines in the afternoon sun.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0319 (1).JPG",
+  alt: "Building with modern architecture",
+  title: "Buildings of New York",
+  desc: "Two friends laugh together, capturing a candid moment of happiness.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0362 (1).JPG",
+  alt: "Street view with tall buildings",
+  title: "Time Square Street at night",
+  desc: "A person enjoys a walk with their loyal dog companion.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0506 (1).JPG",
+  alt: "Portrait of a smiling woman",
+  title: "Central Park Zoo",
+  desc: "A warm smile lights up the face of the subject.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0507 (1).JPG",
+  alt: "Man in outdoor setting",
+  title: "Outdoor Portrait",
+  desc: "A man stands outdoors, enjoying the fresh air and natural light.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0510 (1).JPG",
+  alt: "Child playing in the park",
+  title: "Playful Moment",
+  desc: "A child enjoys a playful afternoon in the park.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0511 (1).JPG",
+  alt: "Couple posing together",
+  title: "Togetherness",
+  desc: "A couple poses together, celebrating their bond and happiness.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Unknown",
+  src: "images/IMG_0512 (1).JPG",
+  alt: "Person with sunglasses",
+  title: "Cool Vibes",
+  desc: "A person shows off their style with trendy sunglasses.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Unknown",
+  src: "images/IMG_0513 (1).JPG",
+  alt: "Group of people at an event",
+  title: "Event Gathering",
+  desc: "A group of people gather for a memorable event, sharing smiles and stories.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Unknown",
+  src: "images/IMG_0514 (1).JPG",
+  alt: "Group photo at an event",
+  title: "Event Memories",
+  desc: "A group photo captures the spirit and joy of a special occasion.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0242.JPG",
+  alt: "Street view with parked cars and city lights",
+  title: "Quiet Street",
+  desc: "A tranquil city street lined with parked cars under the glow of evening lights.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0518 (1).JPG",
+  alt: "Modern building with geometric windows",
+  title: "Geometric Facade",
+  desc: "A striking modern building with repeating geometric window patterns.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0528 (1).JPG",
+  alt: "Sunset over city rooftops",
+  title: "Rooftop Sunset",
+  desc: "The sun sets behind a row of city rooftops, painting the sky in warm hues.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0576 (1).JPG",
+  alt: "Tree-lined avenue in autumn",
+  title: "Autumn Avenue",
+  desc: "Golden leaves blanket a quiet avenue lined with trees.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0877 (1).JPG",
+  alt: "Mountain landscape with mist",
+  title: "Misty Peaks",
+  desc: "Mountains rise through a veil of morning mist.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0878 (1).JPG",
+  alt: "River winding through forest",
+  title: "Forest River",
+  desc: "A gentle river winds its way through dense forest greenery.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0978 (1).JPG",
+  alt: "Sunrise over open fields",
+  title: "Field Sunrise",
+  desc: "The first light of day illuminates wide open fields.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0979 (1).JPG",
+  alt: "Rolling hills under cloudy sky",
+  title: "Rolling Hills",
+  desc: "Soft hills stretch beneath a sky filled with drifting clouds.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_0980 (1).JPG",
+  alt: "Lake surrounded by trees",
+  title: "Lakeside Calm",
+  desc: "A peaceful lake reflects the trees that surround it.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Manhattan, New York",
+  src: "images/IMG_0981 (1).JPG",
+  alt: "Path through a green park",
+  title: "Park Path",
+  desc: "A winding path leads through a lush green park.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Manhattan, New York",
+  src: "images/IMG_0984 (1).JPG",
+  alt: "Sunlight filtering through forest",
+  title: "Forest Light",
+  desc: "Sunbeams filter through the dense canopy of a forest.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1015 (1).JPG",
+  alt: "Rocky coastline at sunset",
+  title: "Rocky Coast",
+  desc: "Waves crash against rocks as the sun sets over the horizon.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1022 (1).JPG",
+  alt: "Bridge over river in city",
+  title: "City Bridge",
+  desc: "A sturdy bridge spans the river, connecting city neighborhoods.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1023 (1).JPG",
+  alt: "City skyline at dusk",
+  title: "Dusk Skyline",
+  desc: "The city skyline glows as dusk settles in.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1026 (1).JPG",
+  alt: "Historic building with columns",
+  title: "Columned Hall",
+  desc: "A grand historic building stands tall with its columned facade.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1028 (1).JPG",
+  alt: "City street with tram tracks",
+  title: "Tram Street",
+  desc: "Tram tracks run down a bustling city street.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1031 (1).JPG",
+  alt: "Sunrise over distant hills",
+  title: "Dawn Hills",
+  desc: "Soft morning light reveals the gentle curves of distant hills.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1092 (1).JPG",
+  alt: "Wide field with scattered trees",
+  title: "Open Field",
+  desc: "A vast field stretches out, dotted with solitary trees.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1093 (1).JPG",
+  alt: "Mountain range under cloudy sky",
+  title: "Cloudy Range",
+  desc: "Mountains rise beneath a sky filled with drifting clouds.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1106 (1).JPG",
+  alt: "River flowing through green valley",
+  title: "Valley River",
+  desc: "A winding river carves its way through a lush green valley.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Manhattan, New York",
+  src: "images/IMG_1264 (1).JPG",
+  alt: "Sunset over a calm lake",
+  title: "View from the Brooklyn Bridge",
+  desc: "The sun sets over a tranquil lake, painting the water in warm hues.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Milan, Italy",
+  src: "images/IMG_1325 (1).JPG",
+  alt: "Forest path with sunlight filtering through trees",
+  title: "Milan Cathedral ",
+  desc: "A narrow path winds through the forest, illuminated by soft sunlight.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Italy",
+  src: "images/IMG_1336 (1).JPG",
+  alt: "Rocky coastline with waves",
+  title: "Coastal Rocks",
+  desc: "Waves crash against rugged rocks along the coastline.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_1644 (1).JPG",
+  alt: "Mountain peak with snow",
+  title: "Snowy Peak",
+  desc: "A majestic mountain peak capped with fresh snow.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_1730 (1).JPG",
+  alt: "Riverbank with trees and grass",
+  title: "Riverbank Green",
+  desc: "Lush grass and trees line the edge of a gentle river.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_1731 (1).JPG",
+  alt: "Sunset over open countryside",
+  title: "Countryside Sunset",
+  desc: "The countryside glows under the colors of a setting sun.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_1736 (1).JPG",
+  alt: "Rolling hills with scattered trees",
+  title: "Hills and Trees",
+  desc: "Gentle hills dotted with trees stretch into the distance.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Calabria, Italy",
+  src: "images/IMG_1764 (1).JPG",
+  alt: "Sunrise over misty valley",
+  title: "Misty Valley",
+  desc: "Morning mist rises from a quiet valley at sunrise.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_2047 (1).JPG",
+  alt: "Mountain lake surrounded by forest",
+  title: "Mountain Lake",
+  desc: "A serene lake sits nestled among forested mountains.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_2073 (1).JPG",
+  alt: "River winding through a forest",
+  title: "Forest Stream",
+  desc: "A gentle stream winds its way through a dense forest.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2627 (1).JPG",
+  alt: "Mountain landscape with winding road",
+  title: "Winding Road",
+  desc: "A curving road snakes through the mountains, inviting exploration.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2767 (1).JPG",
+  alt: "Sunset over a tranquil lake",
+  title: "Lake Serenity",
+  desc: "The calm waters of a lake reflect the colors of the setting sun.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2769 (1).JPG",
+  alt: "Forest path in autumn",
+  title: "Autumn Walk",
+  desc: "A leaf-strewn path winds through a forest dressed in autumn colors.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2803 (1).JPG",
+  alt: "Rocky coastline with crashing waves",
+  title: "Coastal Waves",
+  desc: "Waves break against rugged rocks along the shore.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2804 (1).JPG",
+  alt: "Mountain peak under cloudy sky",
+  title: "Peak Clouds",
+  desc: "A solitary mountain peak rises beneath a blanket of clouds.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2805 (1).JPG",
+  alt: "River winding through green valley",
+  title: "Green Valley",
+  desc: "A river carves its way through a lush, green valley.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2806 (1).JPG",
+  alt: "Sunset over rolling hills",
+  title: "Hills at Sunset",
+  desc: "Rolling hills are bathed in the warm light of sunset.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2807 (1).JPG",
+  alt: "Forest with sunlight streaming through trees",
+  title: "Sunlit Forest",
+  desc: "Sunbeams pierce the canopy, illuminating the forest floor.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2808 (1).JPG",
+  alt: "Mountain lake surrounded by trees",
+  title: "Mountain Reflection",
+  desc: "A tranquil lake mirrors the surrounding mountains and trees.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2809 (1).JPG",
+  alt: "Riverbank with wildflowers",
+  title: "Wildflower Bank",
+  desc: "Colorful wildflowers bloom along the edge of a gentle river.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2812 (1).JPG",
+  alt: "Sunrise over misty valley",
+  title: "Misty Sunrise",
+  desc: "Morning mist rises from a quiet valley as the sun appears.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Paris, France",
+  src: "images/IMG_2813 (1).JPG",
+  alt: "Rocky coastline at dusk",
+  title: "Dusk Coast",
+  desc: "Rocks and waves are silhouetted against the fading light.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2816 (1).JPG",
+  alt: "Mountain range with dramatic clouds",
+  title: "Dramatic Range",
+  desc: "Clouds swirl above a rugged mountain range.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2821 (1).JPG",
+  alt: "River winding through forest",
+  title: "Forest River",
+  desc: "A gentle river winds through dense forest greenery.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2822 (1).JPG",
+  alt: "Sunset over open fields",
+  title: "Fields at Sunset",
+  desc: "Wide open fields glow in the last light of day.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2823 (1).JPG",
+  alt: "Mountain lake at sunrise",
+  title: "Lake Sunrise",
+  desc: "The sun rises over a peaceful mountain lake.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2833 (1).JPG",
+  alt: "Forest path with autumn leaves",
+  title: "Autumn Path",
+  desc: "A winding path is covered in golden autumn leaves.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2838 (1).JPG",
+  alt: "Mountain landscape with mist",
+  title: "Mist Valley",
+  desc: "Mist drifts through a valley surrounded by mountains.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2841 (1).JPG",
+  alt: "Sunset over rocky coastline",
+  title: "Rock Sunset",
+  desc: "The sun sets behind rocks along the coast.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2843 (1).JPG",
+  alt: "River winding through green valley",
+  title: "River Valley",
+  desc: "A gentle river carves its way through lush greenery.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2845 (1).JPG",
+  alt: "Mountain peak under cloudy sky",
+  title: "Cloudy Peak",
+  desc: "A solitary mountain peak rises beneath a blanket of clouds.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2846 (1).JPG",
+  alt: "Forest with sunlight streaming through trees",
+  title: "Forest Sunlight",
+  desc: "Sunbeams pierce the canopy, illuminating the forest floor.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2847 (1).JPG",
+  alt: "Mountain lake surrounded by trees",
+  title: "Lake Reflection",
+  desc: "A tranquil lake mirrors the surrounding mountains and trees.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2848 (1).JPG",
+  alt: "Riverbank with wildflowers",
+  title: "Riverbank Flowers",
+  desc: "Colorful wildflowers bloom along the edge of a gentle river.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2849 (1).JPG",
+  alt: "Sunrise over misty valley",
+  title: "Valley Mist",
+  desc: "Morning mist rises from a quiet valley as the sun appears.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2850 (1).JPG",
+  alt: "Rocky coastline at dusk",
+  title: "Coast at Dusk",
+  desc: "Rocks and waves are silhouetted against the fading light.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Paris, France",
+  src: "images/IMG_2851 (1).JPG",
+  alt: "Mountain range with dramatic clouds",
+  title: "Cloud Range",
+  desc: "Clouds swirl above a rugged mountain range.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3052 (1).JPG",
+  alt: "Sunset over city rooftops",
+  title: "Rooftop Glow",
+  desc: "The last rays of sunlight illuminate the rooftops in a warm embrace.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3053 (1).JPG",
+  alt: "Modern building with glass facade",
+  title: "Glass Geometry",
+  desc: "Reflections and lines create a geometric pattern on a city building.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3054 (1).JPG",
+  alt: "Tree-lined street in spring",
+  title: "Spring Avenue",
+  desc: "Fresh leaves and blossoms line a peaceful city street.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3055 (1).JPG",
+  alt: "Historic building with ornate details",
+  title: "Ornate Facade",
+  desc: "Intricate stonework decorates the front of a historic building.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3056 (1).JPG",
+  alt: "City park with walking path",
+  title: "Park Walk",
+  desc: "A winding path invites a stroll through the city park.",
+  camera: "shot by  Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3057 (1).JPG",
+  alt: "Sunrise over distant hills",
+  title: "Morning Hills",
+  desc: "Soft light reveals the gentle slopes of hills at dawn.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3060 (1).JPG",
+  alt: "River flowing through city",
+  title: "Urban River",
+  desc: "A river winds its way through the heart of the city.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3064 (1).JPG",
+  alt: "Mountain landscape with cloudy sky",
+  title: "Cloudy Heights",
+  desc: "Mountains rise beneath a sky filled with drifting clouds.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3065 (1).JPG",
+  alt: "Sunset over open fields",
+  title: "Fields of Gold",
+  desc: "Wide open fields glow in the last light of day.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3066 (1).JPG",
+  alt: "Lake surrounded by trees",
+  title: "Lakeside View",
+  desc: "A peaceful lake reflects the trees that surround it.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3090 (1).JPG",
+  alt: "City skyline at dusk",
+  title: "Evening Skyline",
+  desc: "The city skyline glows as dusk settles in.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3092 (1).JPG",
+  alt: "Historic building with columns",
+  title: "Columned Beauty",
+  desc: "A grand historic building stands tall with its columned facade.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3094 (1).JPG",
+  alt: "City street with tram tracks",
+  title: "Tram Avenue",
+  desc: "Tram tracks run down a bustling city street.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3101 (1).JPG",
+  alt: "Sunrise over distant hills",
+  title: "Sunrise Hills",
+  desc: "Soft morning light reveals the gentle curves of distant hills.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3102 (1).JPG",
+  alt: "Wide field with scattered trees",
+  title: "Scattered Trees",
+  desc: "A vast field stretches out, dotted with solitary trees.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3103 (1).JPG",
+  alt: "Mountain range under cloudy sky",
+  title: "Mountain Clouds",
+  desc: "Mountains rise beneath a sky filled with drifting clouds.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3104 (1).JPG",
+  alt: "River flowing through green valley",
+  title: "Green River",
+  desc: "A winding river carves its way through a lush green valley.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3107 (1).JPG",
+  alt: "Sunset over a calm lake",
+  title: "Calm Lake",
+  desc: "The sun sets over a tranquil lake, painting the water in warm hues.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Gambarie D'aspromonte, Italy",
+  src: "images/IMG_3155 (1).JPG",
+  alt: "Forest path with sunlight filtering through trees",
+  title: "Sunlit Path",
+  desc: "A narrow path winds through the forest, illuminated by soft sunlight.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3337 (1).JPG",
+  alt: "Sunset over city skyline",
+  title: "Armani the Boss",
+  desc: "The city skyline glows in the warm colors of sunset.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3362 (1).JPG",
+  alt: "Mountain landscape with mist",
+  title: "Misty Mountains",
+  desc: "Mountains rise through a veil of morning mist.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3364 (1).JPG",
+  alt: "River winding through forest",
+  title: "Winding River",
+  desc: "A gentle river winds its way through dense forest greenery.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3388 (1).JPG",
+  alt: "Sunrise over open fields",
+  title: "Morning Fields",
+  desc: "The first light of day illuminates wide open fields.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3403 (1).JPG",
+  alt: "Rolling hills under cloudy sky",
+  title: "Cloudy Hills",
+  desc: "Soft hills stretch beneath a sky filled with drifting clouds.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3450 (1).JPG",
+  alt: "Lake surrounded by trees",
+  title: "Tree Lake",
+  desc: "A peaceful lake reflects the trees that surround it.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3453 (1).JPG",
+  alt: "Path through a green park",
+  title: "PayDay Characters",
+  desc: "A winding path leads through a lush green park.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3454 (1).JPG",
+  alt: "Sunlight filtering through forest",
+  title: "PayDay Characters",
+  desc: "Sunbeams filter through the dense canopy of a forest.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3456 (1).JPG",
+  alt: "Rocky coastline at sunset",
+  title: "Rocky Sunset",
+  desc: "Waves crash against rocks as the sun sets over the horizon.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3479 (1).JPG",
+  alt: "Bridge over river in city",
+  title: "River Bridge",
+  desc: "A sturdy bridge spans the river, connecting city neighborhoods.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3483 (1).JPG",
+  alt: "City skyline at dusk",
+  title: "Dusk City",
+  desc: "The city skyline glows as dusk settles in.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3484 (1).JPG",
+  alt: "Historic building with columns",
+  title: "Historic Columns",
+  desc: "A grand historic building stands tall with its columned facade.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Frankfurt, Germany",
+  src: "images/IMG_3523.JPG",
+  alt: "Canal with moored boats and illuminated buildings at sunset",
+  title: "Canal Sunset",
+  desc: "Reflections shimmer on the water as evening falls over the canal.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3632 (1).JPG",
+  alt: "Curving seaside road with buildings and boats",
+  title: "Seaside Road",
+  desc: "A winding road hugs the coastline, lined with boats and homes.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3636 (1).JPG",
+  alt: "Boats docked in marina with city rising behind",
+  title: "Marina View",
+  desc: "Boats gather in a quiet harbor beneath hillside buildings.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Unknown",
+  src: "images/IMG_3637 (1).JPG",
+  alt: "Rustic trattoria with lights and people dining",
+  title: "Trattoria Night",
+  desc: "Warm lights and laughter echo from a cozy restaurant corner.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3777 (1).JPG",
+  alt: "Traffic and city lights in Rome at dusk",
+  title: "Roman Traffic",
+  desc: "Headlights and cobblestones define the pulse of the city at dusk.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_3781.JPG",
+  alt: "Narrow alley with glowing restaurants and buildings",
+  title: "Alley Glow",
+  desc: "Historic walls bathe in sunset glow in a quiet alley.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Naples, Italy",
+  src: "images/IMG_3859 (1).PNG",
+  alt: "Close-up brick detail of Pantheon exterior",
+  title: "Pantheon Brick",
+  desc: "Warm shadows trace the timeless bricks of the Pantheon.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "landscapes",
+  location: "Italy",
+  src: "images/IMG_3921.JPG",
+  alt: "Statue of Neptune battling sea creatures",
+  title: "Neptune Statue",
+  desc: "Stone gods clash above water in a famed fountain.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3985 (1).JPG",
+  alt: "Detailed shot of church dome and towers at dusk",
+  title: "Dome at Dusk",
+  desc: "Domes rise into twilight, adorned with saints and shadows.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4060 (1).JPG",
+  alt: "Church and fountain view during sunset",
+  title: "Sunset Piazza",
+  desc: "Evening glow wraps the piazza in historic elegance.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4061 (1).JPG",
+  alt: "Close-up of baroque dome and bell tower",
+  title: "Baroque Dome",
+  desc: "Symmetry and stone merge in this classic church dome.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4063 (1).JPG",
+  alt: "Ocean horizon with boat and cliffs under dramatic sky",
+  title: "Ocean Horizon",
+  desc: "Sea, sky, and stone blend in layers with a ferry approaching from afar.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4067 (1).JPG",
+  alt: "Dense collection of stars in a dark sky",
+  title: "Starry Night",
+  desc: "An ethereal stretch of stars fades into infinite space.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Italy",
+  src: "images/IMG_4545.PNG",
+  alt: "Elevated night view of Naples with glowing street lights",
+  title: "Naples Lights",
+  desc: "A shimmering network of roads and buildings illuminates the cityscape.",
+  camera: "shot by iPhone 15 Pro"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4554 (1).JPG",
+  alt: "Heineken bottle with rose in dimly lit bar",
+  title: "Bar Rose",
+  desc: "A rose in a beer bottle captures a fleeting moment of nightlife romance.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4667 (1).JPG",
+  alt: "Small golden crescent moon in dark sky",
+  title: "Crescent Moon",
+  desc: "The delicate arc of a crescent moon rests in the silence of night.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3983 (1).JPG",
+  alt: "Historic building with ornate architectural details",
+  title: "Classical Details",
+  desc: "Dettagli architettonici finemente scolpiti adornano una facciata storica romana.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3984 (1).JPG",
+  alt: "Pantheon dome interior with central oculus",
+  title: "Eternal Oculus",
+  desc: "La luce filtra attraverso l'occhio centrale della cupola creando un'atmosfera mistica.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3988 (1).JPG",
+  alt: "Roman street cafe with outdoor seating",
+  title: "Roman Cafe",
+  desc: "Un accogliente caffè all'aperto invita a fermarsi lungo una via storica.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "landscapes",
+  location: "Rome, Italy",
+  src: "images/IMG_3993 (1).JPG",
+  alt: "Ancient temple columns at sunset",
+  title: "Timeless Columns",
+  desc: "Colonne antiche si stagliano contro un cielo tinto dai colori del tramonto.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4686.JPG",
+  alt: "Night cityscape with illuminated buildings",
+  title: "City Lights",
+  desc: "Una distesa di luci urbane punteggia l'orizzonte notturno della città.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4688 (1).JPG",
+  alt: "Coastal view with dramatic sky",
+  title: "Coastal Drama",
+  desc: "Un cielo carico di nuvole crea contrasti intensi sopra un paesaggio costiero.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4711 (1).JPG",
+  alt: "Urban skyline reflected in water",
+  title: "Mirror City",
+  desc: "Il profilo della città si riflette sulla superficie calma dell'acqua, creando un'immagine speculare.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4712 (1).JPG",
+  alt: "Sunset over city with silhouetted buildings",
+  title: "Urban Sunset",
+  desc: "Un tramonto infuocato avvolge i contorni degli edifici in silhouette.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+},
+{
+  section: "portraits",
+  location: "Naples, Italy",
+  src: "images/IMG_4713 (1).JPG",
+  alt: "Architectural detail of modern building",
+  title: "Modern Geometry",
+  desc: "Linee pulite e forme geometriche definiscono questo esempio di architettura contemporanea.",
+  camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
+}
+
+//Aggiustare le section delle foto, la location, il nome, e la descrizione
+//Verificare il layout per i cellulari
+//Mettere il sito online, e metterle in ordine cronologico se possibile
+
+ 
+];
+
+
+      let currentIndex = 0;
+      let currentSection = "";
+      let currentImages = [];
+
+
+      function showViewer(item, index, section) {
+      currentIndex = index;
+      currentSection = section;
+      currentImages = imageData.filter(i => i.section === section);
+
+      document.getElementById('viewerImg').src = item.src;
+      document.getElementById('viewerImg').alt = item.alt;
+      document.getElementById('viewerLocation').textContent = item.location;
+      document.getElementById('viewerCamera').textContent = item.camera;
+
+      const overlay = document.getElementById('viewerOverlay');
+      overlay.style.display = 'flex';
+      setTimeout(() => overlay.classList.add('active'), 10);
+      updateArrows();
+    }
+
+     function updateArrows() {
+      document.getElementById('prevPhoto').classList.toggle('hidden', currentIndex === 0);
+      document.getElementById('nextPhoto').classList.toggle('hidden', currentIndex === currentImages.length - 1);
+    }
+
+    document.getElementById('prevPhoto').addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        showViewer(currentImages[currentIndex], currentIndex, currentSection);
+      }
+    });
+
+
+     document.getElementById('nextPhoto').addEventListener('click', () => {
+      if (currentIndex < currentImages.length - 1) {
+        currentIndex++;
+        showViewer(currentImages[currentIndex], currentIndex, currentSection);
+      }
+    });
+
+
+     document.getElementById('closeViewer').addEventListener('click', () => {
+      const overlay = document.getElementById('viewerOverlay');
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.style.display = 'none', 400);
+    });
+
+  function populate(thumbnailsContainer, sectionId) {
+      thumbnailsContainer.innerHTML = '';
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            if (img.dataset.src) {
+              img.src = img.dataset.src;
+              img.removeAttribute('data-src');
+            }
+            observer.unobserve(img);
+          }
+        });
+      }, {rootMargin: '200px'});
+  
+ const images = imageData.filter(i => i.section === sectionId);
+images.forEach((item, index) => {
+  const thumb = document.createElement('div');
+  thumb.className = 'thumbnail';
+  thumb.innerHTML = `
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3C/svg%3E"
+         data-src="${item.src}" 
+         alt="${item.alt}" 
+         loading="lazy">
+  `;
+  thumb.addEventListener('click', () => showViewer(item, index, sectionId));
+  thumbnailsContainer.appendChild(thumb);
+  observer.observe(thumb.querySelector('img'));
+});
+
+}
+
+      function initGallery(sectionId) {
+      const section = document.getElementById(sectionId);
+      const thumbs = section.querySelector('.thumbnails');
+      populate(thumbs, sectionId);
+    }
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.querySelectorAll('.card').forEach(card=>{
+        card.addEventListener('click',()=>{
+          document.getElementById('landing').style.display='none';
+          const sec=document.getElementById(card.dataset.target);
+          sec.classList.add('active');
+          initGallery(card.dataset.target);
+        });
+      });
+      document.querySelectorAll('.back-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          document.querySelectorAll('.gallery-section').forEach(s=>s.classList.remove('active'));
+          document.getElementById('landing').style.display='flex';
+        });
+      });
+    });
+  </script>
+
+  <footer>&copy; 2025 Samuel Loria.</footer>
+</body>
+</html>
