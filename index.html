@@ -119,8 +119,28 @@ Quick Start:
   .viewer-details {
     font-size: 0.9rem; /* Testo leggermente ridotto su mobile */
   }
+
+  /* Overlay fullscreen per immagine */
+.fullscreen-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
 }
 
+.fullscreen-overlay img {
+  max-width: 95%;
+  max-height: 95%;
+  border-radius: 8px;
+  cursor: zoom-out;
+}
+
+}
   </style>
 </head>
 <body>
@@ -153,6 +173,9 @@ Quick Start:
   </section>
 
   <!-- Viewer Overlay -->
+  <div class="fullscreen-overlay" id="fullscreenOverlay">
+    <img src="" alt="Fullscreen Image" id="fullscreenImg">
+  </div>
   <div class="viewer-overlay" id="viewerOverlay">
     <button class="nav-arrow left" id="prevPhoto">❮</button>
     <div class="viewer-content">
@@ -2249,11 +2272,7 @@ Quick Start:
   camera: "shot by Canon EOS R100 + RF-S 18-45mm F4.5-6.3 IS STM"
 }
 
-//Aggiustare le section delle foto, la location, il nome, e la descrizione
-//Verificare il layout per i cellulari
-//Mettere il sito online, e metterle in ordine cronologico se possibile
 
- 
 ];
 
 
@@ -2359,6 +2378,25 @@ images.forEach((item, index) => {
         });
       });
     });
+
+    // Elementi per il fullscreen
+    const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+    const fullscreenImg = document.getElementById('fullscreenImg');
+    const viewerImg = document.getElementById('viewerImg');
+
+    // Clic sull'immagine dentro il viewer per fullscreen
+    viewerImg.addEventListener('click', () => {
+      fullscreenImg.src = viewerImg.src; // stessa immagine
+      fullscreenOverlay.style.display = 'flex';
+    });
+
+    // Clic fuori dall'immagine per chiudere fullscreen
+    fullscreenOverlay.addEventListener('click', (e) => {
+      if (e.target !== fullscreenImg) {
+        fullscreenOverlay.style.display = 'none';
+      }
+    });
+
   </script>
 
   <footer>&copy; 2025 Samuel Loria.</footer>
