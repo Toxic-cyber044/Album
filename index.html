@@ -104,43 +104,62 @@ Quick Start:
 
     @media (max-width: 768px) {
   .viewer-content {
-    flex-direction: column; /* Impila immagine e dettagli verticalmente */
-    width: 95vw;            /* Occupa quasi tutta la larghezza dello schermo */
+    flex-direction: column;
+    width: 95vw;
     max-width: none;
     max-height: 90vh;
     gap: 10px;
   }
 
   .viewer-content img {
-    max-width: 100%;  /* L'immagine riempie tutto lo spazio disponibile */
-    max-height: 60vh; /* Mantiene proporzioni corrette senza tagliarla */
+    max-width: 100%;
+    max-height: 60vh;
   }
 
   .viewer-details {
-    font-size: 0.9rem; /* Testo leggermente ridotto su mobile */
+    font-size: 0.9rem;
   }
+}
 
-  /* Overlay fullscreen per immagine */
+/* 🔥 Overlay fullscreen per zoom (fuori dal media query, valido per tutti i dispositivi) */
 .fullscreen-overlay {
   display: none;
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.9);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 9999;
 }
 
 .fullscreen-overlay img {
-  max-width: 95%;
-  max-height: 95%;
-  border-radius: 8px;
-  cursor: zoom-out;
+  max-width: 80%;
+  max-height: 80%;
+  border-radius: 10px;
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+.fullscreen-overlay.show img {
+  transform: scale(1);
+  opacity: 1;
 }
+
+.close-fullscreen {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  user-select: none;
+}
+
   </style>
 </head>
 <body>
@@ -253,22 +272,26 @@ Quick Start:
   <div class="thumbnails"></div>
 </section>
 
-  <!-- Viewer Overlay -->
-  <div class="fullscreen-overlay" id="fullscreenOverlay">
-    <img src="" alt="Fullscreen Image" id="fullscreenImg">
-  </div>
-  <div class="viewer-overlay" id="viewerOverlay">
-    <button class="nav-arrow left" id="prevPhoto">❮</button>
-    <div class="viewer-content">
-      <button class="close-btn" id="closeViewer">×</button>
-      <img src="" alt="" id="viewerImg">
-      <div class="viewer-details">
-        <p><span class="label">Location:</span> <span class="value" id="viewerLocation"></span></p>
-        <p><span class="label">Camera:</span> <span class="value" id="viewerCamera"></span></p>
-      </div>
+  
+ <!-- Fullscreen Overlay -->
+<div class="fullscreen-overlay" id="fullscreenOverlay">
+  <span class="close-fullscreen" id="closeFullscreen">&times;</span> <!-- AGGIUNTO -->
+  <img src="" alt="Fullscreen Image" id="fullscreenImg">
+</div>
+<!-- Viewer Overlay -->
+<div class="viewer-overlay" id="viewerOverlay">
+  <button class="nav-arrow left" id="prevPhoto">❮</button>
+  <div class="viewer-content">
+    <button class="close-btn" id="closeViewer">×</button>
+    <img src="" alt="" id="viewerImg">
+    <div class="viewer-details">
+      <p><span class="label">Location:</span> <span class="value" id="viewerLocation"></span></p>
+      <p><span class="label">Camera:</span> <span class="value" id="viewerCamera"></span></p>
     </div>
-    <button class="nav-arrow right" id="nextPhoto">❯</button>
   </div>
+  <button class="nav-arrow right" id="nextPhoto">❯</button>
+</div>
+
 
   <script>
     const imageData = [
@@ -2461,22 +2484,31 @@ images.forEach((item, index) => {
     });
 
     // Elementi per il fullscreen
-    const fullscreenOverlay = document.getElementById('fullscreenOverlay');
-    const fullscreenImg = document.getElementById('fullscreenImg');
-    const viewerImg = document.getElementById('viewerImg');
+    const fullscreenOverlay = document.getElementById("fullscreenOverlay");
+    const fullscreenImg = document.getElementById("fullscreenImg");
+    const viewerImg = document.getElementById("viewerImg");
+    const closeFullscreen = document.getElementById("closeFullscreen");
 
     // Clic sull'immagine dentro il viewer per fullscreen
-    viewerImg.addEventListener('click', () => {
-      fullscreenImg.src = viewerImg.src; // stessa immagine
-      fullscreenOverlay.style.display = 'flex';
-    });
+    viewerImg.addEventListener("click", () => {
+    fullscreenImg.src = viewerImg.src;
+    fullscreenOverlay.classList.add("show");
+    fullscreenOverlay.style.display = "flex";
+  })
 
     // Clic fuori dall'immagine per chiudere fullscreen
-    fullscreenOverlay.addEventListener('click', (e) => {
-      if (e.target !== fullscreenImg) {
-        fullscreenOverlay.style.display = 'none';
-      }
-    });
+    closeFullscreen.addEventListener("click", () => {
+    fullscreenOverlay.classList.remove("show");
+    setTimeout(() => fullscreenOverlay.style.display = "none", 300);
+  });
+
+  // Clic fuori dall’immagine per chiudere
+  fullscreenOverlay.addEventListener("click", (e) => {
+    if (e.target === fullscreenOverlay) {
+      fullscreenOverlay.classList.remove("show");
+      setTimeout(() => fullscreenOverlay.style.display = "none", 300);
+    }
+  });
 
   </script>
 
