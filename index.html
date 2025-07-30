@@ -101,6 +101,26 @@ Quick Start:
     .nav-arrow.hidden { display: none; }
 
     footer { text-align:center; padding:40px 20px; font-size:0.9rem; color:#7A4F3A; }
+
+    @media (max-width: 768px) {
+  .viewer-content {
+    flex-direction: column; /* Impila immagine e dettagli verticalmente */
+    width: 95vw;            /* Occupa quasi tutta la larghezza dello schermo */
+    max-width: none;
+    max-height: 90vh;
+    gap: 10px;
+  }
+
+  .viewer-content img {
+    max-width: 100%;  /* L'immagine riempie tutto lo spazio disponibile */
+    max-height: 60vh; /* Mantiene proporzioni corrette senza tagliarla */
+  }
+
+  .viewer-details {
+    font-size: 0.9rem; /* Testo leggermente ridotto su mobile */
+  }
+}
+
   </style>
 </head>
 <body>
